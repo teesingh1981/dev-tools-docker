@@ -1,33 +1,41 @@
-FROM mcr.microsoft.com/azure-cli:2.0.77
-
-# --- Arguments ---
-ARG TERRAFORM_VERSION="0.12.27"
-
-# --- Re-usable environment variables ---
-ENV TMP_DIR="/tmp"
-ENV TERRAFORM_DIR="/opt/terraform"
-
-RUN apk update && apk --no-cache add bash py-pip && apk --no-cache add --virtual=build gcc libffi-dev musl-dev openssl-dev python-dev make curl openssl wget unzip
-RUN apk add sed attr dialog dialog-doc bash bash-doc bash-completion grep grep-doc
-RUN apk add util-linux util-linux-doc pciutils usbutils binutils findutils readline
-RUN apk add man man-pages lsof lsof-doc less less-doc nano nano-doc  curl-doc busybox-extras bind-tools 
+FROM alpine:3.11
 
 
+ENV AZURE_CLI_VERSION 2.0.81
+ENV TERRAFORM_VERSION 0.12.27
+ENV KUBE_VERSION v1.15.9
+ENV HELM_VERSION v3.0.3
 
-# --- install kubectl ---
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$k8sversion/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+# Install needed packages and Azure CLI
+RUN apk add \
+    python3 \
+    curl \ 
+    git \
+    jq \
+    gettext && \
+    apk add --virtual .build-deps \
+    gcc \
+    libffi-dev \
+    musl-dev \
+    openssl-dev \
+    make \
+    python3-dev \
+    linux-headers && \
+    pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir azure-cli==$AZURE_CLI_VERSION && \
+    apk del .build-deps && \
+    rm -rf /var/cache/apk/*
 
+# Install Terraform
+RUN curl https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip | unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin - && \
+    chmod +x /usr/local/bin/terraform
 
+# Install kubectl
+RUN curl -L https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
 
-# --- Install Terraform ---
-WORKDIR ${TMP_DIR}
-RUN wget -O terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-RUN unzip terraform.zip
-RUN mkdir ${TERRAFORM_DIR}
-RUN mv terraform ${TERRAFORM_DIR}/.
-RUN ln -s ${TERRAFORM_DIR}/terraform /usr/local/bin/terraform
-RUN rm -rf ${TMP_DIR}/*
-WORKDIR /
+# Install Helm
+RUN curl https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar -xzO linux-amd64/helm > /usr/local/bin/helm && \
+    chmod +x /usr/local/bin/helm
 
-# Ready for run
-CMD sh
+WORKDIR /work
