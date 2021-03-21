@@ -7,6 +7,7 @@ ENV KUBE_VERSION v1.15.9
 ENV HELM_VERSION v3.0.3
 ENV TFLINT_VERSION v0.21.0
 
+
 #install nodejs
 RUN apk add --update --no-cache npm nodejs
 
@@ -38,6 +39,12 @@ RUN apk add --update --no-cache \
 
 
 RUN apk add --update --no-cache bind bind-tools
+
+#install docker 
+RUN apk add --no-cache su-exec
+RUN apk add --update --no-cache docker openrc
+RUN rc-update add docker boot
+
 
 # Install Terraform
 RUN curl https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip | unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin - && \
