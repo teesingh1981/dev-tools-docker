@@ -7,3 +7,4 @@ terraform
     tflint
     checkoc 
 Python3
+docker
