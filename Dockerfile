@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM alpine:3.19.4
 
 
 ENV AZURE_CLI_VERSION 2.0.81
